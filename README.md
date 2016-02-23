@@ -11,7 +11,7 @@ inet extension, collections of convenient functions to use with inet
 
 1> inet_ext:gateways().
 [{"en0","192.168.1.254"},{"en1","192.168.1.254"}]
-'''
+```
 
 To get the gateway for a specific interface uses the `inet_ext:gateway_for/1` function.
 
