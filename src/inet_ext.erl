@@ -14,8 +14,8 @@
       Gateway :: inet:ip_address() | inet:hostname(),
       IP :: string().
 get_internal_address(Gateway) ->
-	[{_, {MyIp, _}}|_] = route(parse_address(Gateway)),
-	inet_parse:ntoa(MyIp).
+    [{_, {MyIp, _}}|_] = route(parse_address(Gateway)),
+    inet_parse:ntoa(MyIp).
 
 %% @doc get the default gateway for the interface name
 -spec gateway_for(Interface) -> IP | Error when
@@ -24,20 +24,25 @@ get_internal_address(Gateway) ->
       Error :: undefined | unsupported_platform.
 gateway_for(IName0) ->
     IName = inet_ext_lib:to_list(IName0),
-	case os:type() of
-		{unix, linux} ->
-			gateway_for1(IName, linux);
-		{unix, darwin} ->
-			gateway_for1(IName, darwin);
-		{_, _} ->
+    case os:type() of
+        {unix, linux} ->
+            gateway_for1(IName, linux);
+        {unix, darwin} ->
+            gateway_for1(IName, darwin);
+        {unix, _} ->
+            gateway_for1(IName, bsd);
+        {_, _} ->
             unsupported_platform
-	end.
+    end.
 
 gateway_for1(IName, linux) ->
     Cmd = "ip r | grep " ++ IName ++ " | grep default | cut -d ' ' -f 3",
     parse_result(inet_ext_lib:run(Cmd));
 gateway_for1(IName, darwin) ->
     Cmd = "ipconfig getoption " ++ IName ++ " router",
+    parse_result(inet_ext_lib:run(Cmd));
+gateway_for1(IName, bsd) ->
+    Cmd = "netstat -rn |grep " ++ IName ++ "|grep default|awk '{print $2}'",
     parse_result(inet_ext_lib:run(Cmd)).
 
 %% @doc return the gateway IPs for each platform
