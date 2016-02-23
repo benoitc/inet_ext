@@ -31,6 +31,8 @@ gateway_for(IName0) ->
             gateway_for1(IName, darwin);
         {unix, _} ->
             gateway_for1(IName, bsd);
+        {win32, _} ->
+            gateway_for1(IName, win32);
         {_, _} ->
             unsupported_platform
     end.
@@ -43,7 +45,18 @@ gateway_for1(IName, darwin) ->
     parse_result(inet_ext_lib:run(Cmd));
 gateway_for1(IName, bsd) ->
     Cmd = "netstat -rn |grep " ++ IName ++ "|grep default|awk '{print $2}'",
-    parse_result(inet_ext_lib:run(Cmd)).
+    parse_result(inet_ext_lib:run(Cmd));
+gateway_for1(IName, win32) ->
+    case re:split(IName, "_", [{return, list}, {parts, 2}]) of
+        [_, SettingId] ->
+            Cmd = "wmic nicconfig where 'SettingId=\"" ++ SettingId ++
+            "\"' get DefaultIPGateway /format:csv",
+            parse_win_result(inet_ext_lib:run(Cmd));
+        _Else ->
+            undefined
+    end.
+
+
 
 %% @doc return the gateway IPs for each platform
 -spec gateways() -> [{Interface, IP}] when
@@ -72,6 +85,20 @@ parse_result(_) ->
     undefined.
 
 
+parse_win_result({0, Res}) ->
+    [_, _, Line| _] = re:split(Res, "\r\r\n", [{return, list}]),
+    case re:split(Line, ",", [{return, binary}]) of
+        [_, <<>>] ->
+            undefined;
+        [_, GatewayListBin] ->
+            [<< "{", IP/binary >>, _] = binary:split(GatewayListBin, <<";">>),
+            binary_to_list(IP);
+        _ ->
+            undefined
+    end;
+parse_win_result(_) ->
+    undefined.
+
 %% @doc convenient function to parse an address
 -spec parse_address(AddrIn) -> AddrOut when
       AddrIn :: inet:ip_address() | inet:hostname(),
@@ -83,7 +110,7 @@ parse_address(S) ->
     Addr.
 
 %% convenient function to recover the list of routes
-%% https://gist.github.com/archaelus/1247174
+%% https://gist.github.com/archaelus/1247174@@@
 %% from @archaleus (Geoff Cant)
 %%
 %%
