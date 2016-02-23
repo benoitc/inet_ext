@@ -10,11 +10,18 @@
 
 
 %% @doc get internal address used for this gateway
+-spec get_internal_address(Gateway) -> IP when
+      Gateway :: inet:ip_address() | inet:hostname(),
+      IP :: string().
 get_internal_address(Gateway) ->
 	[{_, {MyIp, _}}|_] = route(parse_address(Gateway)),
 	inet_parse:ntoa(MyIp).
 
-
+%% @doc get the default gateway for the interface name
+-spec gateway_for(Interface) -> IP | Error when
+      Interface :: atom(),
+      IP :: string(),
+      Error :: undefined | unsupported_platform.
 gateway_for(IName0) ->
     IName = inet_ext_lib:to_list(IName0),
 	case os:type() of
@@ -26,27 +33,29 @@ gateway_for(IName0) ->
             unsupported_platform
 	end.
 
-
-gateways() ->
-    {ok, IFData} = inet:getifaddrs(),
-    Interfaces = [I || {I, _} <- IFData],
-    Gateways = lists:foldl(fun(IName, Acc) ->
-                                   case gateway_for(IName) of
-                                       undefined -> Acc;
-                                       "" -> Acc;
-                                       Ip -> [{IName,Ip} | Acc]
-                                   end
-                           end, [], Interfaces),
-    lists:usort(Gateways).
-
-
-
 gateway_for1(IName, linux) ->
     Cmd = "ip r | grep " ++ IName ++ " | grep default | cut -d ' ' -f 3",
     parse_result(inet_ext_lib:run(Cmd));
 gateway_for1(IName, darwin) ->
     Cmd = "ipconfig getoption " ++ IName ++ " router",
     parse_result(inet_ext_lib:run(Cmd)).
+
+%% @doc return the gateway IPs for each platform
+-spec gateways() -> [{Interface, IP}] when
+      Interface :: atom(),
+      IP :: string().
+gateways() ->
+    {ok, IFData} = inet:getifaddrs(),
+    Interfaces = [I || {I, _} <- IFData],
+    Gateways = lists:foldl(fun(IName, Acc) ->
+                                   case gateway_for(IName) of
+                                       unsupported_platform -> Acc;
+                                       undefined -> Acc;
+                                       "" -> Acc;
+                                       Ip -> [{IName,Ip} | Acc]
+                                   end
+                           end, [], Interfaces),
+    lists:usort(Gateways).
 
 parse_result({0, S0}) ->
     %% remove trailing endline
@@ -58,7 +67,10 @@ parse_result(_) ->
     undefined.
 
 
-
+%% @doc convenient function to parse an address
+-spec parse_address(AddrIn) -> AddrOut when
+      AddrIn :: inet:ip_address() | inet:hostname(),
+      AddrOut :: inet:ip_address().
 parse_address({_, _, _, _}=Addr) -> Addr;
 parse_address({_, _, _, _, _, _, _, _}= Addr) -> Addr;
 parse_address(S) ->
@@ -68,6 +80,14 @@ parse_address(S) ->
 %% convenient function to recover the list of routes
 %% https://gist.github.com/archaelus/1247174
 %% from @archaleus (Geoff Cant)
+%%
+%%
+%% @doc get the route information for an IP address
+-spec route(IP) -> {Interface, {Route, NetMask}} when
+      IP :: inet:ip_address(),
+      Interface :: atom(),
+      Route :: inet:ip_address(),
+      NetMask :: inet:ip_address().
 route(Targ) ->
 	route(Targ, routes()).
 
@@ -95,6 +115,11 @@ match_route(Targ, Addr, Mask)
 			   || I <- lists:seq(1, tuple_size(Targ)) ]).
 
 
+%% @doc get all routes
+-spec routes() -> [{Interface, {Route, NetMask}}] when
+      Interface :: atom(),
+      Route :: inet:ip_address(),
+      NetMask :: inet:ip_address().
 routes() ->
 	{ok, IFData} = inet:getifaddrs(),
 	lists:append([ routes(IF, IFOpts) || {IF, IFOpts} <- IFData ]).
