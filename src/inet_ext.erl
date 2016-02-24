@@ -7,7 +7,6 @@
 -module(inet_ext).
 
 -export([get_internal_address/1]).
--export([gateway_for/1]).
 -export([gateways/0]).
 -export([parse_address/1]).
 -export([route/1, route/2]).
@@ -23,44 +22,7 @@ get_internal_address(Gateway) ->
     [{_, {MyIp, _}}|_] = route(parse_address(Gateway)),
     inet_parse:ntoa(MyIp).
 
-%% @doc get the default gateway for the interface name
--spec gateway_for(Interface) -> IP | Error when
-      Interface :: atom(),
-      IP :: string(),
-      Error :: undefined | unsupported_platform.
-gateway_for(IName0) ->
-    IName = inet_ext_lib:to_list(IName0),
-    case os:type() of
-        {unix, linux} ->
-            gateway_for1(IName, linux);
-        {unix, darwin} ->
-            gateway_for1(IName, darwin);
-        {unix, _} ->
-            gateway_for1(IName, bsd);
-        {win32, _} ->
-            gateway_for1(IName, win32);
-        {_, _} ->
-            unsupported_platform
-    end.
 
-gateway_for1(IName, linux) ->
-    Cmd = "ip r | grep " ++ IName ++ " | grep default | cut -d ' ' -f 3",
-    parse_result(inet_ext_lib:run(Cmd));
-gateway_for1(IName, darwin) ->
-    Cmd = "ipconfig getoption " ++ IName ++ " router",
-    parse_result(inet_ext_lib:run(Cmd));
-gateway_for1(IName, bsd) ->
-    Cmd = "netstat -rn |grep " ++ IName ++ "|grep default|awk '{print $2}'",
-    parse_result(inet_ext_lib:run(Cmd));
-gateway_for1(IName, win32) ->
-    case re:split(IName, "_", [{return, list}, {parts, 2}]) of
-        [_, SettingId] ->
-            Cmd = "wmic nicconfig where 'SettingId=\"" ++ SettingId ++
-            "\"' get DefaultIPGateway /format:csv",
-            parse_win_result(inet_ext_lib:run(Cmd));
-        _Else ->
-            undefined
-    end.
 
 %% @doc return the gateway IPs for each platform
 -spec gateways() -> [{Interface, IP}] when
@@ -78,6 +40,40 @@ gateways() ->
                                    end
                            end, [], Interfaces),
     lists:usort(Gateways).
+
+gateway_for(IName0) ->
+    IName = inet_ext_lib:to_list(IName0),
+    case os:type() of
+        {unix, linux} ->
+            gateway_for(IName, linux);
+        {unix, darwin} ->
+            gateway_for(IName, darwin);
+        {unix, _} ->
+            gateway_for(IName, bsd);
+        {win32, _} ->
+            gateway_for(IName, win32);
+        {_, _} ->
+            unsupported_platform
+    end.
+
+gateway_for(IName, linux) ->
+    Cmd = "ip r | grep " ++ IName ++ " | grep default | cut -d ' ' -f 3",
+    parse_result(inet_ext_lib:run(Cmd));
+gateway_for(IName, darwin) ->
+    Cmd = "ipconfig getoption " ++ IName ++ " router",
+    parse_result(inet_ext_lib:run(Cmd));
+gateway_for(IName, bsd) ->
+    Cmd = "netstat -rn |grep " ++ IName ++ "|grep default|awk '{print $2}'",
+    parse_result(inet_ext_lib:run(Cmd));
+gateway_for(IName, win32) ->
+    case re:split(IName, "_", [{return, list}, {parts, 2}]) of
+        [_, SettingId] ->
+            Cmd = "wmic nicconfig where 'SettingId=\"" ++ SettingId ++
+            "\"' get DefaultIPGateway /format:csv",
+            parse_win_result(inet_ext_lib:run(Cmd));
+        _Else ->
+            undefined
+    end.
 
 parse_result({0, S0}) ->
     %% remove trailing endline
