@@ -1,3 +1,9 @@
+%%% -*- erlang -*-
+%%% This file is part of nat-pmp released under the MIT license.
+%%% See the NOTICE for more information.
+%%%
+%%% Copyright (c) 2016 Benoît Chesneau <benoitc@refuge.io>
+
 -module(inet_ext).
 
 -export([get_internal_address/1]).
