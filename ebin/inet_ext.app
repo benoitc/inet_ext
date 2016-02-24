@@ -1,6 +1,6 @@
 {application, inet_ext, [
 	{description, "inet extensions"},
-	{vsn, "0.3.0"},
+	{vsn, "0.3.1"},
 	{modules, ['inet_ext','inet_ext_lib']},
 	{registered, []},
 	{applications, [kernel,stdlib]}
