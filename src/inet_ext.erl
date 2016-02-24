@@ -88,8 +88,14 @@ parse_win_result({0, Res}) ->
         [_, <<>>] ->
             undefined;
         [_, GatewayListBin] ->
-            [<< "{", IP/binary >>, _] = binary:split(GatewayListBin, <<";">>),
-            binary_to_list(IP);
+            case binary:split(GatewayListBin, <<";">>) of
+                [<< "{", IP/binary >>, _] ->
+                        binary_to_list(IP);
+                [GatewayListBin] ->
+                    IP = binary:part(GatewayListBin,
+                                     1, byte_size(GatewayListBin) - 2),
+                    binary_to_list(IP)
+            end;
         _ ->
             undefined
     end;
