@@ -56,8 +56,6 @@ gateway_for1(IName, win32) ->
             undefined
     end.
 
-
-
 %% @doc return the gateway IPs for each platform
 -spec gateways() -> [{Interface, IP}] when
       Interface :: atom(),
@@ -83,7 +81,6 @@ parse_result({0, S0}) ->
     end;
 parse_result(_) ->
     undefined.
-
 
 parse_win_result({0, Res}) ->
     [_, _, Line| _] = re:split(Res, "\r\r\n", [{return, list}]),
