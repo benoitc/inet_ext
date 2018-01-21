@@ -5,3 +5,6 @@ deps
 test/*.tmp
 test/*.beam
 .rebar
+_build
+*.iml
+.idea
