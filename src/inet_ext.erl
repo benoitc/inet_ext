@@ -57,7 +57,7 @@ gateway_for(IName0) ->
     end.
 
 gateway_for(IName, linux) ->
-    Cmd = "ip r | grep " ++ IName ++ " | grep default | cut -d ' ' -f 3",
+    Cmd = "ip r | grep " ++ IName ++ " | grep default | sed 's/^none //' | cut -d ' ' -f 3",
     parse_result(inet_ext_lib:run(Cmd));
 gateway_for(IName, darwin) ->
     Cmd = "ipconfig getoption " ++ IName ++ " router",
