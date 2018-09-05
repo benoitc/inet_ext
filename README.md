@@ -48,6 +48,22 @@ To get the gateway for a specific interface uses the `inet_ext:gateway_for/1` fu
    {65535,65535,65535,65535,0,0,0,0}}}]
 ```
 
+### IP and MAC address format conversions
+
+|API|Description|
+|-----:|:-----------|
+|convert_mac/2|Convert MAC Address from -> to |
+|convert_ip/2|Convert IP Address from -> to |
+
+Conversions allowed are in between following types:
+to_string | to_binstring | to_integer | to_binary | to_list | to_tuple
+```erlang
+1> inet_utils:convert_mac(to_binstring, <<1,2,3,4,5,6>>).
+<<"01:02:03:04:05:06">>
+2> inet_utils:convert_ip(to_binary, 16#01020304).
+<<1,2,3,4>>
+```
+
 ## Contribute
 
 For issues, comments or feedback please create an [issue](https://github.com/benoitc/inet_ext/issues).
