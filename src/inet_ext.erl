@@ -13,7 +13,6 @@
 -export([routes/0]).
 
 
-
 %% @doc get internal address used for this gateway
 -spec get_internal_address(Gateway) -> IP when
       Gateway :: inet:ip_address() | inet:hostname(),
@@ -32,12 +31,8 @@ gateways() ->
     {ok, IFData} = inet:getifaddrs(),
     Interfaces = [I || {I, _} <- IFData],
     Gateways = lists:foldl(fun(IName, Acc) ->
-                                   case gateway_for(IName) of
-                                       unsupported_platform -> Acc;
-                                       undefined -> Acc;
-                                       "" -> Acc;
-                                       Ip -> [{IName,Ip} | Acc]
-                                   end
+                               Ip = gateway_for(IName),
+                               [{IName,Ip} | Acc]
                            end, [], Interfaces),
     lists:usort(Gateways).
 
@@ -51,9 +46,7 @@ gateway_for(IName0) ->
         {unix, _} ->
             gateway_for(IName, bsd);
         {win32, _} ->
-            gateway_for(IName, win32);
-        {_, _} ->
-            unsupported_platform
+            gateway_for(IName, win32)
     end.
 
 gateway_for(IName, linux) ->
@@ -120,7 +113,7 @@ parse_address(S) ->
 %%
 %%
 %% @doc get the route information for an IP address
--spec route(IP) -> {Interface, {Route, NetMask}} when
+-spec route(IP) -> [{Interface, {Route, NetMask}}] when
       IP :: inet:ip_address(),
       Interface :: atom(),
       Route :: inet:ip_address(),

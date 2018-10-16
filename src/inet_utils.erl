@@ -40,10 +40,8 @@
 %%====================================================================
 -define(hexstr2int(H), erlang:list_to_integer(erlang:binary_to_list(H),16)).
 
--type(option() :: to_string | to_binstring | to_integer | to_binary | to_list | to_tuple).
 
--spec(convert_mac(Option, Arg) -> term when
-    Option :: option(), Arg :: term()).
+-spec convert_mac(inet_ext:convert_type(), inet_ext:mac_addr()) -> term().
 convert_mac(to_binstring, Arg) ->
     case convert_mac(to_string, Arg) of
         R when is_list(R) ->
@@ -75,8 +73,7 @@ convert_mac(to_binary, Arg) when is_binary(Arg) ->
 convert_mac(to_binary, Arg) when is_integer(Arg) ->
     convert_mac(to_binary, binary:encode_unsigned(Arg)).
 
--spec(convert_ip(Option, Arg) -> term when
-    Option :: option(), Arg :: term()).
+-spec convert_ip(inet_ext:convert_type(), inet_ext:ip()) -> term().
 convert_ip(to_binstring, Arg) ->
     case convert_ip(to_string, Arg) of
         R when is_list(R) ->
@@ -104,7 +101,7 @@ convert_ip(to_binary, Arg) when is_list(Arg) ->
         {ok,Tuple} ->
             convert_ip(to_binary, Tuple);
         _ ->
-            bad_arg
+            erlang:error(bad_arg)
     end;
 convert_ip(to_binary, Arg) when is_binary(Arg), size(Arg) == 4 ->
     Arg;
@@ -115,14 +112,13 @@ convert_ip(to_binary, Arg) when is_binary(Arg) ->
 %% Internal functions
 %%====================================================================
 
-convert(Option, Binary) when is_binary(Binary) ->
-    case Option of
-        to_integer ->   binary:decode_unsigned(Binary);
-        to_tuple ->     list_to_tuple(binary_to_list(Binary));
-        to_list ->      binary_to_list(Binary);
-        to_binary ->    Binary;
+convert(Type, Bin) when is_binary(Bin) ->
+    case Type of
+        to_integer ->   binary:decode_unsigned(Bin);
+        to_tuple ->     list_to_tuple(binary_to_list(Bin));
+        to_list ->      binary_to_list(Bin);
         to_string ->
-            case Binary of
+            case Bin of
                 <<A,B,C,D>> ->
                     lists:flatten(io_lib:format("~p.~p.~p.~p", [A,B,C,D]));
                 <<A,B,C,D,E,F>> ->
