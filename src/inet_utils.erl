@@ -35,95 +35,102 @@
 %% API exports
 -export([convert_mac/2, convert_ip/2]).
 
+-type convert_type() :: to_string | to_binstring | to_integer | to_binary | to_list | to_tuple.
+-type ip() :: tuple() | list() | non_neg_integer() | binary().
+-type mac_addr() :: binary() | list() | tuple() | non_neg_integer().
+
+
+-export_types([convert_type/0, ip/0, mac_addr/0]).
+
 %%====================================================================
 %% API functions
 %%====================================================================
 -define(hexstr2int(H), erlang:list_to_integer(erlang:binary_to_list(H),16)).
 
 
--spec convert_mac(inet_ext:convert_type(), inet_ext:mac_addr()) -> term().
+-spec convert_mac(convert_type(), mac_addr()) -> term().
 convert_mac(to_binstring, Arg) ->
-    case convert_mac(to_string, Arg) of
-        R when is_list(R) ->
-            list_to_binary(R);
-        R ->
-            R
-    end;
+  case convert_mac(to_string, Arg) of
+    R when is_list(R) ->
+      list_to_binary(R);
+    R ->
+      R
+  end;
 convert_mac(to_string, Arg) ->
-    convert(to_string, convert_mac(to_binary, Arg));
+  convert(to_string, convert_mac(to_binary, Arg));
 convert_mac(to_integer, Arg) ->
-    convert(to_integer, convert_mac(to_binary, Arg));
+  convert(to_integer, convert_mac(to_binary, Arg));
 convert_mac(to_tuple, Arg) ->
-    convert(to_tuple, convert_mac(to_binary, Arg));
+  convert(to_tuple, convert_mac(to_binary, Arg));
 convert_mac(to_list, Arg) ->
-    convert(to_list, convert_mac(to_binary, Arg));
+  convert(to_list, convert_mac(to_binary, Arg));
 
 convert_mac(to_binary, Arg) when is_tuple(Arg), size(Arg) == 6 ->
-    convert_mac(to_binary, erlang:list_to_binary(erlang:tuple_to_list(Arg)));
+  convert_mac(to_binary, erlang:list_to_binary(erlang:tuple_to_list(Arg)));
 
 convert_mac(to_binary, Arg) when is_list(Arg), length(Arg) == 6 ->
-    convert_mac(to_binary, erlang:list_to_binary(Arg));
+  convert_mac(to_binary, erlang:list_to_binary(Arg));
 
 convert_mac(to_binary, Arg) when is_list(Arg) ->
-    convert_mac(to_binary, erlang:list_to_binary([erlang:list_to_integer(T, 16) || T <- string:tokens(Arg, ":")]));
+  convert_mac(to_binary, erlang:list_to_binary([erlang:list_to_integer(T, 16) || T <- string:tokens(Arg, ":")]));
 convert_mac(to_binary, Arg) when is_binary(Arg), size(Arg) == 6 ->
-    Arg;
+  Arg;
 convert_mac(to_binary, Arg) when is_binary(Arg) ->
-    convert_mac(to_binary, binary_to_list(Arg));
+  convert_mac(to_binary, binary_to_list(Arg));
 convert_mac(to_binary, Arg) when is_integer(Arg) ->
-    convert_mac(to_binary, binary:encode_unsigned(Arg)).
+  convert_mac(to_binary, binary:encode_unsigned(Arg)).
 
--spec convert_ip(inet_ext:convert_type(), inet_ext:ip()) -> term().
+-spec convert_ip(convert_type(), ip()) -> term().
 convert_ip(to_binstring, Arg) ->
-    case convert_ip(to_string, Arg) of
-        R when is_list(R) ->
-            list_to_binary(R);
-        R ->
-            R
-    end;
+  case convert_ip(to_string, Arg) of
+    R when is_list(R) ->
+      list_to_binary(R);
+    R ->
+      R
+  end;
 convert_ip(to_string, Arg) ->
-    convert(to_string, convert_ip(to_binary, Arg));
+  convert(to_string, convert_ip(to_binary, Arg));
 convert_ip(to_integer, Arg) ->
-    convert(to_integer, convert_ip(to_binary, Arg));
+  convert(to_integer, convert_ip(to_binary, Arg));
 convert_ip(to_tuple, Arg) ->
-    convert(to_tuple, convert_ip(to_binary, Arg));
+  convert(to_tuple, convert_ip(to_binary, Arg));
 convert_ip(to_list, Arg) ->
-    convert(to_list, convert_ip(to_binary, Arg));
+  convert(to_list, convert_ip(to_binary, Arg));
 
 convert_ip(to_binary, Arg) when is_tuple(Arg), size(Arg) == 4 ->
-    convert_ip(to_binary, erlang:list_to_binary(erlang:tuple_to_list(Arg)));
+  convert_ip(to_binary, erlang:list_to_binary(erlang:tuple_to_list(Arg)));
 convert_ip(to_binary, Arg) when is_list(Arg), length(Arg) == 4 ->
-    convert_ip(to_binary, erlang:list_to_binary(Arg));
+  convert_ip(to_binary, erlang:list_to_binary(Arg));
 convert_ip(to_binary, Arg) when is_integer(Arg) ->
-    convert_ip(to_binary, binary:encode_unsigned(Arg));
+  convert_ip(to_binary, binary:encode_unsigned(Arg));
 convert_ip(to_binary, Arg) when is_list(Arg) ->
-    case inet_parse:address(Arg) of
-        {ok,Tuple} ->
-            convert_ip(to_binary, Tuple);
-        _ ->
-            erlang:error(bad_arg)
-    end;
+  case inet_parse:address(Arg) of
+    {ok,Tuple} ->
+      convert_ip(to_binary, Tuple);
+    _ ->
+      erlang:error(bad_arg)
+  end;
 convert_ip(to_binary, Arg) when is_binary(Arg), size(Arg) == 4 ->
-    Arg;
+  Arg;
 convert_ip(to_binary, Arg) when is_binary(Arg) ->
-    convert_ip(to_binary, binary_to_list(Arg)).
+  convert_ip(to_binary, binary_to_list(Arg)).
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
 convert(Type, Bin) when is_binary(Bin) ->
-    case Type of
-        to_integer ->   binary:decode_unsigned(Bin);
-        to_tuple ->     list_to_tuple(binary_to_list(Bin));
-        to_list ->      binary_to_list(Bin);
-        to_string ->
-            case Bin of
-                <<A,B,C,D>> ->
-                    lists:flatten(io_lib:format("~p.~p.~p.~p", [A,B,C,D]));
-                <<A,B,C,D,E,F>> ->
-                    lists:flatten(io_lib:format("~2.16.0B:~2.16.0B:~2.16.0B:~2.16.0B:~2.16.0B:~2.16.0B", [A,B,C,D,E,F]))
-            end
-    end;
+  case Type of
+    to_integer ->   binary:decode_unsigned(Bin);
+    to_tuple ->     list_to_tuple(binary_to_list(Bin));
+    to_list ->      binary_to_list(Bin);
+    to_string ->
+      case Bin of
+        <<A,B,C,D>> ->
+          lists:flatten(io_lib:format("~p.~p.~p.~p", [A,B,C,D]));
+        <<A,B,C,D,E,F>> ->
+          lists:flatten(io_lib:format("~2.16.0B:~2.16.0B:~2.16.0B:~2.16.0B:~2.16.0B:~2.16.0B", [A,B,C,D,E,F]))
+      end
+  end;
 convert(_, Arg) ->
-    Arg.
+  Arg.
