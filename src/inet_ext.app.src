@@ -1,6 +1,6 @@
 {application, inet_ext, [
     {description, "An IP/Ethernet Utilities library"},
-    {vsn, "0.1.0"},
+    {vsn, "0.2.0"},
     {registered, []},
     {applications, [
         kernel,
@@ -8,7 +8,7 @@
     ]},
     {env,[]},
     {modules, []},
-    {maintainers, []},
-    {licenses, ["Apache 2.0"]},
-    {links, []}
+    {maintainers, ["Benoit Chesneau"]},
+    {licenses, ["MIT"]},
+    {links, [{"Github", "https://github.com/benoitc/inet_ext"}]}
 ]}.
