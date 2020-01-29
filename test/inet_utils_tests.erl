@@ -24,7 +24,13 @@ simple_test_() ->
         ip_to_binstring(),
         ip_to_list(),
         ip_to_binary(),
-        ip_to_integer()
+        ip_to_integer(),
+        is_private_address(),
+        is_global_address(),
+        is_unspecified_address(),
+        is_loopback_address(),
+        is_linklocal_address(),
+        is_multicast_address()
 ].
 
 
@@ -160,3 +166,61 @@ ip_to_integer() -> [
     ?ip_assert(integer, to_integer, binary),
     ?ip_assert(integer, to_integer, integer)
 ].
+
+
+is_private_address() ->
+  [
+   ?_assert(inet_ext:is_private_address("127.0.0.1")),
+   ?_assert(inet_ext:is_private_address("192.168.0.1")),
+   ?_assert(inet_ext:is_private_address("192.168.10.1")),
+   ?_assert(inet_ext:is_private_address("172.16.10.1")),
+   ?_assert(inet_ext:is_private_address("10.0.0.1")),
+   ?_assert(inet_ext:is_private_address("10.100.0.1")),
+   ?_assert(inet_ext:is_private_address("fe80::18f4:ac93:2ad0:6e01%en0"))
+  ].
+
+is_global_address() ->
+  [
+   ?_assert(inet_ext:is_global_address("217.182.142.173")),
+   ?_assert(inet_ext:is_global_address("2a01:cb0c:8221:ed01:e810:5b2c:6800:ac5")),
+   ?_assert(inet_ext:is_global_address("2a01:cb0c:8221:ed01:1053:5652:5b70:dea7")),
+   ?_assertNot(inet_ext:is_global_address("192.168.0.1")),
+   ?_assertNot(inet_ext:is_global_address("fe80::18f4:ac93:2ad0:6e01%en0"))
+  ].
+
+is_unspecified_address() ->
+  [
+   ?_assert(inet_ext:is_unspecified_address("0.0.0.0")),
+   ?_assert(inet_ext:is_unspecified_address("::")),
+   ?_assert(inet_ext:is_unspecified_address({0,0,0,0})),
+   ?_assert(inet_ext:is_unspecified_address({0,0,0,0,0,0,0,0})),
+   ?_assertNot(inet_ext:is_unspecified_address("10.0.0.1"))
+  ].
+
+is_loopback_address() ->
+  [
+   ?_assert(inet_ext:is_loopback_address("127.0.0.1")),
+   ?_assert(inet_ext:is_loopback_address("::1")),
+   ?_assertNot(inet_ext:is_loopback_address("10.0.0.1")),
+   ?_assertNot(inet_ext:is_loopback_address("0.0.0.0")),
+   ?_assertNot(inet_ext:is_loopback_address("::"))
+  ].
+
+is_linklocal_address() ->
+  [
+   ?_assert(inet_ext:is_linklocal_address("169.254.0.1")),
+   ?_assert(inet_ext:is_linklocal_address("FE80:0000:0000:0000:C800:0EFF:FE74:0008")),
+   ?_assertNot(inet_ext:is_linklocal_address("127.0.0.1")),
+   ?_assertNot(inet_ext:is_linklocal_address("217.182.142.173")),
+   ?_assertNot(inet_ext:is_linklocal_address("192.168.1.10")),
+   ?_assertNot(inet_ext:is_linklocal_address("::1")),
+   ?_assertNot(inet_ext:is_linklocal_address("2a01:cb0c:8221:ed01:e810:5b2c:6800:ac5"))
+  ].
+
+is_multicast_address() ->
+  [
+   ?_assert(inet_ext:is_multicast_address("224.0.0.1")),
+   ?_assert(inet_ext:is_multicast_address("FF02:0:0:0:0:0:0:F")),
+   ?_assertNot(inet_ext:is_multicast_address("192.168.1.1"))
+  ].
+

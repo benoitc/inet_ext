@@ -11,7 +11,15 @@
 -export([parse_address/1]).
 -export([route/1, route/2]).
 -export([routes/0]).
+-export([is_private_address/1]).
+-export([is_global_address/1]).
+-export([is_loopback_address/1]).
+-export([is_unspecified_address/1]).
+-export([is_reserved_address/1]).
+-export([is_linklocal_address/1]).
+-export([is_multicast_address/1]).
 
+-include("inet_ext.hrl").
 
 %% @doc get internal address used for this gateway
 -spec get_internal_address(Gateway) -> IP when
@@ -164,3 +172,73 @@ parse_opts({netmask, Mask}, {{addr, Addr}, Routes})
   when tuple_size(Mask) =:= tuple_size(Addr) ->
   {undefined, [{Addr, Mask} | Routes]};
 parse_opts(_, Acc) -> Acc.
+
+
+
+is_private_address({_, _, _, _}=Addr)->
+  is_network(?IPv4_PRIVATE_NETWORKS, Addr);
+is_private_address({_, _, _, _, _, _, _, _}=Addr) ->
+  is_network(?IPv6_PRIVATE_NETWORKS, Addr);
+is_private_address(Addr) when is_list(Addr) ->
+  is_private_address(parse_address(Addr));
+is_private_address(_) ->
+  false.
+
+
+is_global_address(Addr) ->
+  (is_private_address(Addr) =:= false).
+
+
+is_loopback_address({_, _, _, _} = Addr) ->
+  inet_cidr:contains(?IPv4_LOOPBACK_NETWORK, Addr);
+is_loopback_address({0, 0, 0, 0, 0, 0, 0, 1}) ->
+  true;
+is_loopback_address(Addr) when is_list(Addr) ->
+  is_loopback_address(parse_address(Addr));
+is_loopback_address(_) ->
+  false.
+
+is_unspecified_address({0, 0, 0, 0}) -> true;
+is_unspecified_address({0, 0, 0, 0, 0, 0, 0, 0}) -> true;
+is_unspecified_address(Addr) when is_list(Addr) ->
+  is_unspecified_address(parse_address(Addr));
+is_unspecified_address(_) ->
+  false.
+
+is_reserved_address({_, _, _, _}=Addr) ->
+  inet_cidr:contains(?IPv4_RESERVED_NETWORK, Addr);
+is_reserved_address({_, _, _, _, _, _, _, _}=Addr) ->
+  is_network(?IPv6_RESERVED_NETWORKS, Addr);
+is_reserved_address(Addr) when is_list(Addr) ->
+  is_reserved_address(parse_address(Addr));
+is_reserved_address(_) ->
+  false.
+
+
+is_linklocal_address({_, _, _, _}=Addr) ->
+  inet_cidr:contains(?IPv4_LINKLOCAL_NERWORK, Addr);
+is_linklocal_address({_, _, _, _, _, _, _, _}=Addr) ->
+  inet_cidr:contains(?IPv6_LINKLOCAL_NETWORK, Addr);
+is_linklocal_address(Addr) when is_list(Addr) ->
+  is_linklocal_address(parse_address(Addr));
+is_linklocal_address(_) ->
+  false.
+
+is_multicast_address({_, _, _, _}=Addr) ->
+  inet_cidr:contains(?IPv4_MULTICAST_NETWORK, Addr);
+is_multicast_address({_, _, _, _, _, _, _, _}=Addr) ->
+  inet_cidr:contains(?IPv6_MULTICAST_NETWORK, Addr);
+is_multicast_address(Addr) when is_list(Addr) ->
+  is_multicast_address(parse_address(Addr));
+is_multicast_address(_) ->
+  false.
+
+
+%% check if an ip is a member of the test networks
+is_network([Net | Rest], Addr) ->
+  case inet_cidr:contains(Net, Addr) of
+    true -> true;
+    false -> is_network(Rest, Addr)
+  end;
+is_network([], _Addr) ->
+  false.
