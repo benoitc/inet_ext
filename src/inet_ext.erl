@@ -8,6 +8,7 @@
 
 -export([get_internal_address/1]).
 -export([gateways/0]).
+-export([gateway_for/1]).
 -export([parse_address/1]).
 -export([route/1, route/2]).
 -export([routes/0]).
