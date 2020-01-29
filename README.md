@@ -57,11 +57,35 @@ To get the gateway for a specific interface uses the `inet_ext:gateway_for/1` fu
 
 Conversions allowed are in between following types:
 to_string | to_binstring | to_integer | to_binary | to_list | to_tuple
+
 ```erlang
 1> inet_utils:convert_mac(to_binstring, <<1,2,3,4,5,6>>).
 <<"01:02:03:04:05:06">>
 2> inet_utils:convert_ip(to_binary, 16#01020304).
 <<1,2,3,4>>
+```
+
+### Check address type
+
+You can test an IP address to know if they it's a private,
+global(public), loopback, reserved, unspecified, liknlocal or multicast
+address by using the following functions:
+
+    * `is_private_address/1`
+    * `is_global_address/1`
+    * `is_loopback_address/1`
+    * `is_unspecified_address/1`
+    * `is_reserved_address/1`
+    * `is_linklocal_address/1`
+    * `is_multicast_address/1`
+
+These functions are using based on IANA [IPv4](https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml) & [IPv6](https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+) special-purpose address registries.
+
+
+```erlang
+1> inet_ext:is_private_address("192.168.1.1").
+true
 ```
 
 ## Contribute
