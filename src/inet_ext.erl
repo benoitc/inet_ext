@@ -77,7 +77,7 @@ gateway_for(IName, win32) ->
       undefined
   end.
 
-parse_result({0, S0}) ->
+parse_result({0, S0}) when length(S0) > 0 ->
   %% remove trailing endline
   case re:split(S0, "\n", [{return, list}, {parts, 2}]) of
     [S0] -> S0;
